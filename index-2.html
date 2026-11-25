@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>ALL-IN-ONE AI · v2 프로토타입</title>
+<style>
+  :root{
+    --bg:#e9ecf6;
+    --card:#ffffff;
+    --ink:#171a2e;
+    --ink-2:#3c415c;
+    --muted:#777d97;
+    --line:#e9ebf4;
+    --soft:#f5f6fb;
+    --brand:#5a5ae6;
+    --brand-2:#8b5cf6;
+    --human:#10b3a3;
+    --warn:#f59e0b;
+    --warn-soft:#fff7e8;
+    --red:#e5484d;
+    --red-soft:#fdecec;
+    --green:#0e9f6e;
+    --green-soft:#e8f8f1;
+    --shadow:0 10px 30px rgba(24,28,64,.08);
+    --radius:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(900px 500px at 15% -10%, #dfe3ff 0%, rgba(223,227,255,0) 60%),
+      radial-gradient(700px 500px at 100% 110%, #e5f6f3 0%, rgba(229,246,243,0) 55%),
+      var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+  .app{
+    position:relative;
+    width:100%;
+    max-width:430px;
+    height:100dvh;
+    background:var(--card);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    overflow:clip;
+  }
+  @media (min-width:560px){
+    .app{height:min(920px, calc(100dvh - 24px));border-radius:34px;box-shadow:0 30px 70px rgba(23,26,46,.22), 0 0 0 1px rgba(23,26,46,.06)}
+  }
+
+  /* ---------- header ---------- */
+  header{
+    padding:calc(10px + env(safe-area-inset-top)) 18px 0;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:saturate(180%) blur(14px);
+    -webkit-backdrop-filter:saturate(180%) blur(14px);
+    position:relative;
+    z-index:20;
+    border-bottom:1px solid var(--line);
+  }
+  .top{display:flex;align-items:center;gap:10px;padding-bottom:10px}
+  .logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 100%);display:grid;place-items:center;box-shadow:0 6px 14px rgba(90,90,230,.28);flex:none}
+  .logo svg{width:19px;height:19px;display:block}
+  .brand{line-height:1.1;min-width:0}
+  .brand b{display:block;font-size:15.5px;letter-spacing:-.02em;font-weight:800}
+  .brand span{display:block;font-size:10.5px;color:var(--muted);margin-top:3px;letter-spacing:-.01em}
+  .plan{
+    margin-left:auto;display:inline-flex;align-items:center;gap:5px;
+    padding:7px 10px 7px 11px;border-radius:999px;
+    background:linear-gradient(180deg,#f3f3ff,#ececfe);
+    border:1px solid #ddddfb;color:#4a4adf;font-size:12px;font-weight:700;
+  }
+  .plan .dot{width:5px;height:5px;border-radius:50%;background:#5a5ae6}
+  .plan svg{width:11px;height:11px;opacity:.7}
+
+  .tabs{display:flex;gap:4px;background:var(--soft);border-radius:14px;padding:4px;margin-bottom:10px}
+  .tab{
+    flex:1;padding:9px 0;border-radius:11px;font-size:12.5px;font-weight:700;color:var(--muted);
+    transition:color .18s, background .18s, box-shadow .18s;white-space:nowrap;
+  }
+  .tab.active{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(23,26,46,.09)}
+
+  /* ---------- views ---------- */
+  main{flex:1;min-height:0;position:relative;overflow:hidden;overflow:clip}
+  .view{position:absolute;inset:0;display:none;flex-direction:column;min-height:0}
+  .view.active{display:flex}
+  .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 16px 14px;scroll-behavior:smooth}
+  .scroll::-webkit-scrollbar{width:0}
+
+  /* ---------- usage gauge (humanize top) ---------- */
+  .gauge{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 14px 13px;box-shadow:0 4px 18px rgba(23,26,46,.05);transition:border-color .3s}
+  .gauge.kept{border-color:#bfe9d8;background:linear-gradient(180deg,#fbfefc,#fff)}
+  .g-head{display:flex;align-items:baseline;gap:6px}
+  .g-t{font-size:12.5px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+  .g-sub{font-size:10px;color:var(--muted);letter-spacing:-.01em}
+  .g-pct{margin-left:auto;font-size:26px;font-weight:850;letter-spacing:-.04em;color:var(--brand);line-height:1}
+  .g-pct small{font-size:11px;font-weight:700;color:var(--muted);margin-left:1px}
+  .gauge.high .g-pct{color:#d97706}
+  .bar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:#eef0f8;gap:2px;margin-top:11px}
+  .bar .seg{height:100%;transition:width .6s cubic-bezier(.22,.61,.36,1), background .3s}
+  .seg.direct{background:linear-gradient(90deg,#2fd0bd,#10b3a3)}
+  .seg.ai{background:linear-gradient(90deg,#6a6af0,#8b5cf6)}
+  .gauge.high .seg.ai{background:linear-gradient(90deg,#fbbf24,#f59e0b)}
+  .legend{display:flex;gap:14px;margin-top:8px;font-size:10.5px;color:var(--muted);font-weight:600;letter-spacing:-.01em}
+  .legend i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:1px}
+  .legend b{color:var(--ink-2);font-weight:800;margin-left:2px}
+  .g-note{font-size:10.5px;color:var(--muted);line-height:1.5;margin-top:10px;letter-spacing:-.01em}
+  .dual{display:flex;gap:8px;margin-top:12px}
+  .dual .btn{flex:1;padding:12px 4px;border-radius:12px;font-size:12px;font-weight:800;white-space:nowrap;transition:.16s;letter-spacing:-.02em}
+  .dual .btn:active{transform:scale(.98)}
+  .dual .btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;box-shadow:0 8px 18px rgba(90,90,230,.26)}
+  .dual .btn.ghost{background:#fff;border:1.5px solid #e2e4f4;color:#5a5f7e}
+  .g-kept{display:none;align-items:center;gap:6px;margin-top:11px;font-size:10.5px;font-weight:700;color:#0b7f59;background:var(--green-soft);border-radius:10px;padding:9px 10px;letter-spacing:-.01em}
+  .g-kept.show{display:flex}
+  .g-kept button{margin-left:auto;font-size:10px;font-weight:800;color:#0b7f59;text-decoration:underline;flex:none}
+
+  /* ---------- chat ---------- */
+  .chat{padding-top:4px;display:flex;flex-direction:column;gap:10px}
+  .day{text-align:center;font-size:10px;color:#9aa0b8;font-weight:600;margin:2px 0 0}
+  .msg{display:flex;gap:8px;max-width:100%}
+  .msg.me{justify-content:flex-end}
+  .avatar{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:10px;font-weight:800;color:#fff;background:linear-gradient(135deg,#6a6af0,#8b5cf6);margin-top:2px}
+  .bubble{max-width:80%;padding:9px 12px;border-radius:14px;font-size:12.8px;line-height:1.5;letter-spacing:-.01em;word-break:keep-all}
+  .msg.ai .bubble{background:#f6f7fc;border:1px solid #eceef8;border-top-left-radius:5px;color:var(--ink-2)}
+  .msg.me .bubble{background:linear-gradient(135deg,#5f5fe8,#7d5cf0);color:#fff;border-top-right-radius:5px;box-shadow:0 6px 16px rgba(95,95,232,.22)}
+  .bubble b{font-weight:800;color:var(--ink)}
+  .msg.me .bubble b{color:#fff}
+  .bubble ul{margin:6px 0 0;padding-left:15px}
+  .bubble li{margin:2px 0}
+  .meta{font-size:9px;color:#a2a8bf;margin-top:3px;display:flex;gap:5px;align-items:center}
+  .meta .demo{background:#eef0fb;color:#7c82a8;border-radius:5px;padding:1px 4px;font-weight:700}
+  .hint{text-align:center;font-size:10px;line-height:1.55;color:#a7acc2;margin:8px 0 2px;letter-spacing:-.01em}
+  .typing{display:flex;gap:3px;padding:4px 2px}
+  .typing i{width:5px;height:5px;border-radius:50%;background:#b9bed6;animation:blink 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.15s}
+  .typing i:nth-child(3){animation-delay:.3s}
+  @keyframes blink{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+
+  /* 조용한 인라인 제안 카드 */
+  .suggest{display:none;padding:11px 12px 11px;border-radius:14px;background:var(--soft);border:1px solid #e7e9f5}
+  .suggest.show{display:block;animation:pop .32s cubic-bezier(.2,.8,.3,1) both}
+  @keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .suggest .s-t{font-size:11.5px;line-height:1.55;color:var(--ink-2);font-weight:600;letter-spacing:-.01em}
+  .suggest .s-t b{font-weight:850;color:#4a4adf}
+  .suggest .s-t .s-sub{display:block;font-size:10px;color:var(--muted);font-weight:600;margin-top:3px}
+  .suggest .s-b{display:flex;gap:6px;margin-top:9px}
+  .suggest .s-b button{flex:1;padding:8px 4px;border-radius:9px;font-size:10.5px;font-weight:800;background:#fff;border:1px solid #dfe2f2;color:#4b5070;white-space:nowrap;letter-spacing:-.02em}
+  .suggest .s-b button.go{background:#eef0ff;border-color:#dadcfb;color:#4a4adf}
+  .suggest .s-b button:active{transform:scale(.98)}
+
+  .composer{padding:7px 16px calc(9px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(255,255,255,.96);backdrop-filter:blur(10px)}
+  .chips{display:flex;gap:7px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:1px}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{
+    flex:none;padding:7px 11px;border-radius:999px;border:1px solid #e2e5f2;background:#fff;
+    font-size:11px;font-weight:700;color:#4c5170;white-space:nowrap;transition:.15s;
+  }
+  .chip:active{transform:scale(.97);background:#f4f5fd}
+  .inputrow{display:flex;gap:8px;align-items:flex-end}
+  .field{
+    flex:1;display:flex;align-items:center;background:var(--soft);border:1px solid #e6e8f3;
+    border-radius:14px;padding:0 6px 0 13px;min-height:44px;transition:border .18s, background .18s;
+  }
+  .field:focus-within{border-color:#c7c8f7;background:#fff;box-shadow:0 0 0 3px rgba(90,90,230,.08)}
+  .field input{flex:1;border:0;outline:0;background:transparent;font-size:16px;color:var(--ink);padding:12px 0;min-width:0}
+  .field input::placeholder{color:#a4a9c0;font-size:13.5px;letter-spacing:-.01em}
+  .send{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--brand),var(--brand-2));display:grid;place-items:center;flex:none;box-shadow:0 6px 16px rgba(90,90,230,.3);transition:.15s}
+  .send:active{transform:scale(.95)}
+  .send svg{width:18px;height:18px}
+
+  /* ---------- generic screen bits ---------- */
+  .screen-head{display:flex;align-items:center;gap:8px;margin:14px 2px 10px}
+  .screen-head h2{margin:0;font-size:15.5px;font-weight:850;letter-spacing:-.03em}
+  .screen-head p{margin:3px 0 0;font-size:11px;color:var(--muted);letter-spacing:-.01em}
+  .pill{margin-left:auto;font-size:10.5px;font-weight:800;color:#4a4adf;background:#eef0ff;border:1px solid #e0e2ff;padding:6px 9px;border-radius:999px;white-space:nowrap;flex:none}
+  .pill.warn{color:#b45309;background:#fff7e8;border-color:#f8e2b6}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 4px 18px rgba(23,26,46,.04)}
+  .card + .card{margin-top:11px}
+  .card-label{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;color:var(--muted);letter-spacing:.02em;margin-bottom:8px;text-transform:uppercase}
+  .card-label .n{font-weight:600;text-transform:none;letter-spacing:0;color:#a0a6bd}
+  textarea{
+    width:100%;border:0;outline:0;resize:none;background:transparent;color:var(--ink-2);
+    font-family:inherit;font-size:16px;line-height:1.62;letter-spacing:-.01em;min-height:92px;overflow:hidden;
+  }
+  textarea::placeholder{color:#a9aec4}
+  .sample-btn{font-size:10.5px;font-weight:800;color:var(--brand);background:#f1f1ff;border-radius:8px;padding:5px 8px;flex:none}
+  .ed-foot{display:flex;align-items:center;gap:8px;margin-top:6px}
+  .counter{font-size:10px;font-weight:700;color:#8f95ad;font-variant-numeric:tabular-nums;letter-spacing:-.01em;white-space:nowrap}
+  .counter b{color:#5a5ae6;font-weight:850}
+  .counter.ml{margin-left:auto}
+  .fromsrc{display:none;font-size:9px;font-weight:800;color:#0b7f59;background:var(--green-soft);border-radius:6px;padding:2px 5px;text-transform:none;letter-spacing:0}
+  .fromsrc.show{display:inline-flex}
+  .primary{
+    width:100%;padding:14px;border-radius:14px;font-size:13.5px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--brand),var(--brand-2));box-shadow:0 10px 22px rgba(90,90,230,.26);
+    transition:.16s;display:flex;align-items:center;justify-content:center;gap:7px;
+  }
+  .primary:active{transform:scale(.985)}
+  .primary:disabled{opacity:.6;box-shadow:none}
+  .primary.ghost{background:#fff;color:var(--brand);border:1px solid #dddefa;box-shadow:none}
+  .note{font-size:10px;color:#959bb2;line-height:1.5;text-align:center;margin-top:9px;letter-spacing:-.005em}
+
+  /* tone chips */
+  .tones{display:flex;gap:7px;margin:0 0 10px}
+  .tone{
+    flex:1;padding:9px 2px;border-radius:11px;border:1px solid #e4e6f2;background:#fff;
+    font-size:11.5px;font-weight:800;color:#5a6079;white-space:nowrap;transition:.16s;letter-spacing:-.03em;
+  }
+  .tone.on{background:linear-gradient(180deg,#f2f1ff,#eaeaff);border-color:#c9cafb;color:#4343d6;box-shadow:0 4px 12px rgba(90,90,230,.12)}
+  .tone:active{transform:scale(.98)}
+  .tone-hint{font-size:10px;color:#9aa0b8;margin:-2px 2px 10px;letter-spacing:-.01em}
+
+  /* humanize compare */
+  .cmp{display:flex;flex-direction:column;gap:0}
+  .cmp .blk{padding:11px 12px;border-radius:12px;font-size:12.5px;line-height:1.62;letter-spacing:-.01em}
+  .cmp .before{background:#f7f8fc;color:#6f7590;border:1px dashed #e3e6f2}
+  .cmp .after{background:linear-gradient(180deg,#f4f2ff,#f7f5ff);color:var(--ink);border:1px solid #e4e0ff}
+  .cmp .arrow{display:flex;align-items:center;gap:7px;color:#a9aec4;font-size:9.5px;font-weight:700;padding:7px 4px}
+  .cmp .arrow:before,.cmp .arrow:after{content:"";height:1px;background:#eceef6;flex:1}
+  .hl{background:#efeaff;color:#4b3fd1;border-radius:4px;padding:0 2px;font-weight:700}
+  .result-head{display:flex;align-items:center;gap:7px;margin-bottom:11px}
+  .result-head .ok{width:20px;height:20px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-size:11px;font-weight:900;flex:none}
+  .result-head b{font-size:12.5px}
+  .result-head .left{margin-left:auto;font-size:10.5px;color:var(--muted);font-weight:700;white-space:nowrap}
+  .actions{display:flex;gap:7px;margin-top:11px}
+  .actions button{flex:1;padding:9px;border-radius:10px;font-size:11px;font-weight:800;background:#f5f6fc;color:#565b7a}
+  .actions button.acc{background:#eef0ff;color:#4a4adf}
+  .empty-note{font-size:10.5px;color:#959bb2;margin-top:8px;line-height:1.5}
+
+  /* grammar */
+  .diff{font-size:13px;line-height:1.8;letter-spacing:-.01em;color:var(--ink-2);word-break:keep-all}
+  .err{background:var(--red-soft);color:#c33b40;border-radius:3px;padding:1px 1px;border-bottom:1.5px solid #f3b7b9;font-weight:700;cursor:pointer;transition:.15s;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+  .fix{background:var(--green-soft);color:#0b7f59;border-radius:3px;padding:1px 1px;border-bottom:1.5px solid #a9e4cd;font-weight:700;cursor:pointer;transition:.15s;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+  .err.pulse{background:#fbd5d6;box-shadow:0 0 0 3px rgba(229,72,77,.14)}
+  .fix.pulse{background:#cdf0e2;box-shadow:0 0 0 3px rgba(14,159,110,.14)}
+  .count{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;color:#b4453f;background:#fdeeee;border-radius:999px;padding:5px 9px;flex:none}
+  .count b{color:#e5484d}
+  .reasons{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+  .reasons li{display:flex;gap:9px;font-size:11.5px;line-height:1.5;color:#5b6079;letter-spacing:-.01em;padding:9px 10px;border-radius:11px;background:var(--soft);border:1px solid #eef0f7;transition:.2s}
+  .reasons li.pulse{background:#fff;border-color:#c7c8f7;box-shadow:0 6px 16px rgba(90,90,230,.1)}
+  .reasons .num{width:17px;height:17px;border-radius:50%;background:#fff;border:1px solid #e2e5f1;color:#8b90a8;font-size:9.5px;font-weight:800;display:grid;place-items:center;flex:none;margin-top:1px}
+  .reasons .pair{font-weight:800;color:var(--ink);display:block;margin-bottom:1px}
+  .reasons .pair s{color:#c33b40;text-decoration-thickness:1px}
+  .reasons .pair em{font-style:normal;color:#0b7f59}
+  .tohuman{
+    width:100%;margin-top:11px;padding:13px 8px;border-radius:13px;font-size:12.5px;font-weight:850;letter-spacing:-.02em;
+    color:#4343d6;background:linear-gradient(180deg,#f3f2ff,#ececff);border:1px solid #d8dafb;
+    display:flex;align-items:center;justify-content:center;gap:6px;transition:.16s;
+  }
+  .tohuman:active{transform:scale(.985)}
+
+  /* toast */
+  .toast{
+    position:absolute;left:16px;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));
+    background:rgba(23,26,46,.94);color:#fff;font-size:11.5px;line-height:1.5;font-weight:600;
+    padding:12px 14px;border-radius:13px;box-shadow:0 14px 30px rgba(23,26,46,.3);
+    opacity:0;transform:translateY(10px);pointer-events:none;transition:.25s;z-index:60;text-align:center;
+  }
+  .toast.show{opacity:1;transform:none}
+  .toast b{color:#ffd88a}
+
+  /* modal */
+  .sheet-bg{position:absolute;inset:0;background:rgba(16,18,38,.42);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:.25s;z-index:70}
+  .sheet-bg.show{opacity:1;pointer-events:auto}
+  .sheet{
+    position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;
+    padding:10px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(101%);
+    transition:transform .34s cubic-bezier(.2,.8,.25,1);z-index:71;max-height:88%;overflow-y:auto;
+  }
+  .sheet.show{transform:none}
+  .grab{width:38px;height:4px;border-radius:99px;background:#e4e6f0;margin:2px auto 14px}
+  .sheet h3{margin:0;font-size:16.5px;font-weight:850;letter-spacing:-.03em}
+  .sheet .sub{margin:4px 0 12px;font-size:10.5px;color:var(--muted);line-height:1.5}
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+  .pcard{border:1px solid var(--line);border-radius:14px;padding:11px 7px;text-align:center;position:relative;background:#fff}
+  .pcard.cur{border-color:#c9cafb;background:linear-gradient(180deg,#f7f6ff,#fff);box-shadow:0 6px 16px rgba(90,90,230,.1)}
+  .pcard .nm{font-size:12px;font-weight:850}
+  .pcard .pr{font-size:15px;font-weight:850;margin-top:5px;letter-spacing:-.03em}
+  .pcard .pr small{font-size:9px;font-weight:600;color:var(--muted)}
+  .pcard .tag{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--brand);color:#fff;font-size:8.5px;font-weight:800;padding:2px 7px;border-radius:99px;white-space:nowrap}
+  table{width:100%;border-collapse:collapse;font-size:10.5px}
+  th,td{padding:7px 4px;text-align:center;border-bottom:1px solid var(--line)}
+  th{font-size:9.5px;color:var(--muted);font-weight:800;letter-spacing:.02em;padding-bottom:6px}
+  td:first-child,th:first-child{text-align:left;font-weight:700;color:var(--ink-2);width:31%;letter-spacing:-.01em}
+  td{color:#565b7a;letter-spacing:-.01em}
+  td.em{color:#4a4adf;font-weight:800}
+  tr:last-child td{border-bottom:0}
+  .sheet .close{width:100%;margin-top:12px;padding:12px;border-radius:13px;background:var(--soft);font-size:12.5px;font-weight:800;color:#4b5070}
+  .fine{font-size:9px;color:#a0a5ba;text-align:center;margin-top:8px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <header>
+    <div class="top">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5l2.3 5.4 5.7.6-4.3 3.9 1.2 5.7L12 15.2 7.1 18l1.2-5.7L4 8.5l5.7-.6L12 2.5z" fill="#fff"/><circle cx="18.6" cy="5.2" r="1.7" fill="#fff" opacity=".65"/></svg>
+      </div>
+      <div class="brand"><b>ALL-IN-ONE AI</b><span>학생용 AI 작업대 · v2</span></div>
+      <button class="plan" onclick="openPlans()" aria-label="요금제 비교">
+        <span class="dot"></span>Free
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="chat" onclick="switchTab('chat')" role="tab">AI 채팅</button>
+      <button class="tab" data-tab="human" onclick="switchTab('human')" role="tab">휴머나이징</button>
+      <button class="tab" data-tab="grammar" onclick="switchTab('grammar')" role="tab">문법 교정</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= CHAT ================= -->
+    <section class="view active" id="v-chat">
+      <div class="scroll" id="chatScroll">
+        <div class="chat" id="chatLog">
+          <div class="day">오늘</div>
+          <div class="msg ai">
+            <div class="avatar">AI</div>
+            <div>
+              <div class="bubble">안녕하세요! 오늘은 어떤 걸 도와드릴까요?<br>보고서 초안을 만들어 드리거나, 쓴 글을 다듬어 드릴 수 있어요.</div>
+              <div class="meta"><span class="demo">데모</span> 방금</div>
+            </div>
+          </div>
+          <div class="msg me">
+            <div class="bubble">미세먼지가 식물에 미치는 영향으로 과학 보고서를 써야 해. 서론·본론·결론 구조로 잡아 줄 수 있어?</div>
+          </div>
+          <div class="msg ai">
+            <div class="avatar">AI</div>
+            <div>
+              <div class="bubble">좋은 주제예요. 잎 표면에 쌓인 미세먼지가 빛을 가리고 기공을 막으면 광합성이 줄어들어요. 이 흐름을 중심으로 초안을 잡아 드릴게요.</div>
+              <div class="meta"><span class="demo">데모</span> 방금</div>
+            </div>
+          </div>
+          <div class="msg me">
+            <div class="bubble">내가 쓴 서론이야. "요즘 미세먼지가 심해져서 식물도 힘들어하는 것 같다. 우리 집 베란다 화분 잎이 회색으로 변했다." 이 문장 살려서 써 줘.</div>
+          </div>
+          <div class="msg ai">
+            <div class="avatar">AI</div>
+            <div>
+              <div class="bubble">네, 그 장면을 서론 첫머리에 두고 기공·광합성 설명을 뒤에 붙이면 읽는 사람이 이해하기 쉬워요. 초안을 만들 때 그대로 반영할게요.</div>
+              <div class="meta"><span class="demo">데모</span> 방금</div>
+            </div>
+          </div>
+
+          <div id="chatEnd">
+            <div class="suggest" id="chatSuggest">
+              <div class="s-t">현재 AI 활용률 <b id="sugPct">82%</b>예요. 자연스럽게 다듬어 볼까요?
+                <span class="s-sub">AI가 쓴 문장이 많아졌어요. 그대로 써도 괜찮아요.</span>
+              </div>
+              <div class="s-b">
+                <button class="go" onclick="suggestToHuman()">휴머나이징 탭에서 확인</button>
+                <button onclick="dismissSuggest()">그냥 쓸게요</button>
+              </div>
+            </div>
+
+            <div class="hint">AI 답변이 쌓일수록 AI 사용률이 올라가요.<br>80%를 넘으면 조용히 한 번만 물어보고, 사용률은 휴머나이징 탭에서 볼 수 있어요.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="chips">
+          <button class="chip" onclick="quick('과학 보고서 초안 써 줘')">🧪 과학 보고서 초안 써 줘</button>
+          <button class="chip" onclick="quick('내가 쓴 글 다듬기')">✍️ 내가 쓴 글 다듬기</button>
+        </div>
+        <div class="inputrow">
+          <div class="field">
+            <input id="msgInput" type="text" placeholder="무엇이든 물어보세요" autocomplete="off"
+                   onkeydown="if(event.key==='Enter'){sendChat()}">
+          </div>
+          <button class="send" onclick="sendChat()" aria-label="보내기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HUMANIZE ================= -->
+    <section class="view" id="v-human">
+      <div class="scroll" id="humanScroll">
+
+        <div class="gauge" id="gaugeCard">
+          <div class="g-head">
+            <span class="g-t">AI 사용률</span>
+            <span class="g-sub">내가 쓴 글 vs AI가 쓴 글</span>
+            <span class="g-pct"><b id="gPct">55</b><small>%</small></span>
+          </div>
+          <div class="bar" role="img" aria-label="직접 작성과 AI 활용 비율">
+            <div class="seg direct" id="gSegDirect" style="width:45%"></div>
+            <div class="seg ai" id="gSegAI" style="width:55%"></div>
+          </div>
+          <div class="legend">
+            <span><i style="background:#10b3a3"></i>직접 작성 <b id="gDirectNum">45%</b></span>
+            <span><i style="background:#6a6af0"></i>AI 활용 <b id="gAiNum">55%</b></span>
+          </div>
+          <div class="g-note" id="gNote">직접 쓴 비중이 충분해요. 이대로 써도 괜찮아요.</div>
+          <div class="dual" id="gActions">
+            <button class="btn primary" onclick="startHumanize()">휴머나이징 하기</button>
+            <button class="btn ghost" onclick="keepOriginal()">이대로 유지하기</button>
+          </div>
+          <div class="g-kept" id="gKept">
+            <span>✓ 이대로 유지하기로 했어요 · 원문은 그대로예요</span>
+            <button onclick="undoKeep()">다시 보기</button>
+          </div>
+        </div>
+
+        <div class="screen-head">
+          <div>
+            <h2>휴머나이징</h2>
+            <p>AI가 쓴 문장을 내 말투로 자연스럽게</p>
+          </div>
+          <span class="pill" id="humanQuota">5/5회 남음</span>
+        </div>
+
+        <div class="tones" role="group" aria-label="톤 선택">
+          <button class="tone on" data-tone="natural" onclick="setTone('natural')">자연스럽게</button>
+          <button class="tone" data-tone="report" onclick="setTone('report')">보고서·과제용</button>
+          <button class="tone" data-tone="concise" onclick="setTone('concise')">간결하게</button>
+        </div>
+        <div class="tone-hint" id="toneHint">말하듯 자연스러운 문장으로 바꿔요.</div>
+
+        <div class="card" id="humanCard">
+          <div class="card-label">원문 <span class="fromsrc" id="humanFrom">문법 교정에서 가져옴</span>
+            <span class="counter ml" id="humanCountTop">공백 포함 <b>0</b>자 · 제외 <b>0</b>자</span>
+          </div>
+          <textarea id="humanSrc" spellcheck="false">미세먼지는 식물의 생장에 부정적인 영향을 미치는 것으로 사료된다. 특히 기공을 통한 가스 교환을 저해함으로써 광합성 효율이 감소하는 것으로 나타났다. 따라서 미세먼지 농도가 높은 지역에서는 식물의 생장 속도가 둔화될 수 있다.</textarea>
+          <div class="ed-foot">
+            <button class="sample-btn" onclick="loadHumanSample()">예시 문장</button>
+            <span class="counter ml" id="humanCountFoot">공백 포함 <b>0</b>자 · 제외 <b>0</b>자</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <button class="primary" id="humanBtn" onclick="convertHuman()">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <span id="humanBtnLabel">자연스럽게 변환하기</span>
+          </button>
+        </div>
+
+        <div class="card" id="humanResult" style="display:none;margin-top:14px">
+          <div class="result-head">
+            <span class="ok">✓</span>
+            <b>변환 완료</b>
+            <span class="left" id="humanLeft">이번 달 5/5회 남음</span>
+          </div>
+          <div class="cmp">
+            <div class="blk before" id="cmpBefore"></div>
+            <div class="arrow" id="cmpTone">자연스럽게 바꾼 문장</div>
+            <div class="blk after" id="cmpAfter"></div>
+          </div>
+          <div class="empty-note" id="emptyNote" style="display:none">바꿀 표현을 찾지 못했어요. 문장이 이미 자연스러워요.</div>
+          <div class="actions">
+            <button onclick="convertHuman(true)">다시 시도</button>
+            <button class="acc" onclick="copyHuman()">복사</button>
+          </div>
+        </div>
+        <div class="note">Free 요금제는 이번 달 5회까지 사용할 수 있어요. 톤만 바꿀 때는 횟수를 쓰지 않아요.</div>
+      </div>
+    </section>
+
+    <!-- ================= GRAMMAR ================= -->
+    <section class="view" id="v-grammar">
+      <div class="scroll" id="grammarScroll">
+        <div class="screen-head" style="margin-top:2px">
+          <div>
+            <h2>문법 교정</h2>
+            <p>맞춤법 · 띄어쓰기 · 어색한 문장을 한 번에</p>
+          </div>
+          <span class="pill" id="grammarQuota">오늘 10회 남음</span>
+        </div>
+
+        <div class="card" id="grammarCard">
+          <div class="card-label">검사할 문장
+            <span class="counter ml" id="grammarCountTop">공백 포함 <b>0</b>자 · 제외 <b>0</b>자</span>
+          </div>
+          <textarea id="grammarSrc" spellcheck="false" placeholder="교정할 문장을 붙여넣으세요">내가 어제 학교에서 친구랑 떡복이를 먹었는데 진짜 맛잇엇다. 그런데 숙제 안해가지고 혼낫음 ㅜㅜ</textarea>
+          <div class="ed-foot">
+            <button class="sample-btn" onclick="loadGrammarSample()">예시 문장</button>
+            <span class="counter ml" id="grammarCountFoot">공백 포함 <b>0</b>자 · 제외 <b>0</b>자</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <button class="primary" id="grammarBtn" onclick="checkGrammar()">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span id="grammarBtnLabel">문법 검사하기</span>
+          </button>
+        </div>
+
+        <div id="grammarOut" style="display:none">
+          <div class="card" style="margin-top:14px">
+            <div class="result-head">
+              <span class="ok" style="background:#fdecec;color:#e5484d">!</span>
+              <b>고칠 곳을 찾았어요</b>
+              <span class="count" style="margin-left:auto"><b id="fixCount">4</b>곳</span>
+            </div>
+            <div class="card-label" style="margin-bottom:6px">원문 <span class="n" style="text-transform:none">빨간 부분을 눌러 보세요</span></div>
+            <div class="diff" id="diffBefore"></div>
+            <div class="card-label" style="margin:14px 0 6px" id="afterLabel">교정된 문장</div>
+            <div class="diff" id="diffAfter"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-label">고친 이유</div>
+            <ol class="reasons" id="reasonList"></ol>
+          </div>
+
+          <button class="tohuman" id="toHumanBtn" onclick="toHumanizeFromGrammar()">
+            교정된 글로 휴머나이징 하기
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+
+          <div style="margin-top:10px">
+            <button class="primary ghost" onclick="toast('Plus 요금제에서 월 10회 <b>문서 내보내기</b>가 가능해요.')">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+              문서로 내보내기 (Plus)
+            </button>
+          </div>
+          <div class="note">AI 교정은 참고용이에요. 제출 전에 한 번 더 읽어 보세요.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="toast" id="toast"></div>
+  </main>
+
+  <!-- plan sheet -->
+  <div class="sheet-bg" id="sheetBg" onclick="closePlans()"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="요금제 비교">
+    <div class="grab"></div>
+    <h3>요금제 비교</h3>
+    <p class="sub">AI 사용률과 문법 검사는 모든 요금제에서 똑같이 드려요. 요금제에 따라 달라지는 건 <b>횟수와 내보내기</b>뿐이에요.</p>
+
+    <div class="plans">
+      <div class="pcard cur">
+        <div class="tag">사용 중</div>
+        <div class="nm">Free</div>
+        <div class="pr">0원</div>
+      </div>
+      <div class="pcard">
+        <div class="nm">Plus</div>
+        <div class="pr">4,900<small>원/월</small></div>
+      </div>
+      <div class="pcard">
+        <div class="nm">Pro</div>
+        <div class="pr">9,900<small>원/월</small></div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>기능</th><th>Free</th><th>Plus</th><th>Pro</th></tr></thead>
+      <tbody>
+        <tr><td>AI 채팅</td><td class="em">기본</td><td>확대</td><td>더 많은 사용량</td></tr>
+        <tr><td>AI 사용률</td><td class="em">제공</td><td class="em">제공</td><td class="em">제공</td></tr>
+        <tr><td>휴머나이징</td><td class="em">월 5회</td><td>월 100회</td><td>월 300회</td></tr>
+        <tr><td>문법 교정</td><td class="em">일일 10회</td><td>무제한</td><td>무제한</td></tr>
+        <tr><td>PDF·문서 내보내기</td><td>—</td><td>월 10회</td><td>월 30회</td></tr>
+        <tr><td>학습 기록</td><td class="em">기본</td><td>저장</td><td>고급 관리</td></tr>
+      </tbody>
+    </table>
+
+    <button class="close" onclick="closePlans()">닫기</button>
+    <div class="fine">가격은 제안 단계로, 실제 결제 전에 원가와 함께 다시 정해요.</div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- state ---------------- */
+var state = {
+  direct: 0,              /* 내가 직접 쓴 글자 수 */
+  ai: 0,                  /* AI 답변에서 온 글자 수 */
+  humanLeft: 5,
+  grammarLeft: 10,
+  tone: 'natural',
+  converting: false,
+  checking: false,
+  suggestDismissed: false,
+  suggestShown: false,
+  gaugeKept: false,
+  lastSrc: '',
+  lastCorrected: '',
+  lastCorrectedSrc: ''
+};
+
+var $ = function(id){ return document.getElementById(id); };
+
+/* ---------------- tabs ---------------- */
+function switchTab(name){
+  var map = {chat:'v-chat', human:'v-human', grammar:'v-grammar'};
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.classList.toggle('active', t.dataset.tab === name);
+  });
+  $(map[name]).classList.add('active');
+  if(name === 'human'){ updateQuota(); updateLens(); setTimeout(function(){ autoGrow($('humanSrc')); }, 30); }
+  if(name === 'grammar'){ updateQuota(); updateLens(); setTimeout(function(){ autoGrow($('grammarSrc')); }, 30); }
+}
+
+/* ---------------- usage ---------------- */
+function usagePct(){
+  var total = state.direct + state.ai;
+  if(!total) return 0;
+  return Math.round(state.ai * 100 / total);
+}
+function seedUsage(){
+  /* 지금까지의 대화 글자 수에서 사용률을 계산한다 (내가 쓴 글 vs AI가 쓴 글) */
+  var count = function(sel){
+    var n = 0;
+    document.querySelectorAll(sel).forEach(function(el){
+      n += el.textContent.replace(/\s+/g,' ').trim().length;
+    });
+    return n;
+  };
+  state.direct = count('#chatLog .msg.me .bubble');
+  state.ai = count('#chatLog .msg.ai .bubble');
+}
+function renderUsage(){
+  var ai = usagePct();
+  var direct = 100 - ai;
+  var high = (state.ai * 100 / Math.max(1, state.ai + state.direct)) > 80;
+  $('gPct').textContent = ai;
+  $('gAiNum').textContent = ai + '%';
+  $('gDirectNum').textContent = direct + '%';
+  $('gSegAI').style.width = ai + '%';
+  $('gSegDirect').style.width = direct + '%';
+  $('gaugeCard').classList.toggle('high', high);
+  $('gaugeCard').querySelector('.bar').setAttribute('aria-label', '직접 작성 ' + direct + '퍼센트, AI 활용 ' + ai + '퍼센트');
+  if(!state.gaugeKept){
+    $('gNote').textContent = high
+      ? 'AI가 쓴 비중이 높아요. 한 번 다듬으면 내 글 비중이 올라가요.'
+      : (ai >= 60
+          ? 'AI 비중이 조금 높은 편이에요. 필요하면 다듬어 보세요.'
+          : '직접 쓴 비중이 충분해요. 이대로 써도 괜찮아요.');
+  }
+  $('sugPct').textContent = ai + '%';
+  if(high && !state.suggestDismissed && !state.suggestShown){ state.suggestShown = true; showSuggest(); }
+  if(!high){ hideSuggest(); }
+}
+function showSuggest(){
+  var c = $('chatSuggest');
+  if(!c.classList.contains('show')){
+    c.classList.add('show');
+    if($('v-chat').classList.contains('active')) scrollChat();
+  }
+}
+function hideSuggest(){ $('chatSuggest').classList.remove('show'); }
+function dismissSuggest(){
+  state.suggestDismissed = true;
+  hideSuggest();
+  toast('원문 그대로 쓰기로 했어요. 휴머나이징 탭에서 언제든 바꿀 수 있어요.');
+}
+function suggestToHuman(){
+  state.suggestDismissed = true;
+  hideSuggest();
+  switchTab('human');
+  $('humanScroll').scrollTop = 0;
+  setTimeout(function(){ $('gaugeCard').scrollIntoView({behavior:'smooth', block:'start'}); }, 60);
+}
+
+/* ---------------- chat ---------------- */
+var REPLIES = {
+  science: {
+    text: '<b>과학 보고서 초안 — 미세먼지가 식물에 미치는 영향</b><br>' +
+          '<b>1. 서론</b> 미세먼지는 잎 표면에 쌓여 빛을 가리고, 기공을 막아 기체 교환을 방해합니다.<br>' +
+          '<b>2. 본론</b> 기공이 막히면 이산화탄소가 들어오지 못해 광합성 속도가 떨어집니다. 실험에서는 미세먼지에 노출한 식물의 잎 색이 옅어지고 새로 난 잎도 작아졌으며, 생장 길이가 짧아졌습니다.<br>' +
+          '<b>3. 결론</b> 미세먼지 농도가 높은 날에는 잎을 물로 씻어 주고, 실내에서는 공기청정기를 켜는 것이 도움이 됩니다. 창문을 오래 열어 두지 않는 것도 좋습니다.',
+    after: function(){ state.lastSrc = ''; $('humanFrom').classList.remove('show'); $('humanSrc').value = scienceDraft; updateLens(); }
+  },
+  polish: {
+    text: '쓴 글을 다듬어 봤어요. 문장을 짧게 나누고 군더더기를 덜었습니다.<br><br>' +
+          '<b>전</b> 저는 이번 실험을 통해서 미세먼지가 식물에게 안 좋은 영향을 준다는 것을 알게 되었습니다.<br>' +
+          '<b>후</b> 이번 실험으로 미세먼지가 식물에 좋지 않은 영향을 준다는 것을 알았습니다.<br><br>' +
+          '더 자연스럽게 바꾸려면 <b>휴머나이징</b> 탭에서 이어서 해 보세요.',
+    after: function(){
+      $('humanFrom').classList.remove('show');
+      $('humanSrc').value = '저는 이번 실험을 통해서 미세먼지가 식물에게 안 좋은 영향을 준다는 것을 알게 되었습니다.';
+      updateLens();
+    }
+  },
+  default: {
+    text: '질문을 이렇게 정리해 봤어요.<br><ul><li>핵심 개념을 먼저 한 문장으로 요약</li><li>예시와 근거를 두 개 붙이기</li><li>마지막에 결론 한 줄</li></ul>데모라서 정해진 예시 답변이 나와요. 버튼을 눌러 실제 흐름을 확인해 보세요.',
+    after: function(){}
+  }
+};
+
+function addMsg(role, html, demo){
+  var wrap = document.createElement('div');
+  wrap.className = 'msg ' + role;
+  if(role === 'ai'){
+    wrap.innerHTML = '<div class="avatar">AI</div><div><div class="bubble">' + html + '</div>' +
+      '<div class="meta">' + (demo ? '<span class="demo">데모</span>' : '') + '방금</div></div>';
+  }else{
+    wrap.innerHTML = '<div class="bubble">' + html + '</div>';
+  }
+  $('chatLog').insertBefore(wrap, $('chatEnd'));
+  scrollChat();
+  return wrap;
+}
+function scrollChat(){
+  var s = $('chatScroll');
+  var go = function(){ s.style.scrollBehavior = 'auto'; s.scrollTop = s.scrollHeight; };
+  setTimeout(go, 40);
+  setTimeout(go, 320);
+}
+function bubbleText(html){
+  var d = document.createElement('div');
+  d.innerHTML = html;
+  return d.textContent.replace(/\s+/g,' ').trim();
+}
+function quick(text){
+  $('msgInput').value = text;
+  sendChat();
+}
+function sendChat(){
+  var input = $('msgInput');
+  var text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  addMsg('me', escapeHtml(text));
+  state.direct += text.length;
+  renderUsage();
+
+  var bubble = addMsg('ai', '<div class="typing"><i></i><i></i><i></i></div>', true);
+  var body = bubble.querySelector('.bubble');
+
+  setTimeout(function(){
+    var key = 'default';
+    if(text.indexOf('과학') > -1 || text.indexOf('보고서') > -1) key = 'science';
+    else if(text.indexOf('다듬') > -1 || text.indexOf('내가 쓴') > -1) key = 'polish';
+
+    var r = REPLIES[key];
+    body.innerHTML = r.text;
+    r.after();
+    state.ai += bubbleText(r.text).length;
+    updateLens();
+    renderUsage();
+    scrollChat();
+  }, 780);
+}
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ---------------- humanize ---------------- */
+var sampleSource = '미세먼지는 식물의 생장에 부정적인 영향을 미치는 것으로 사료된다. 특히 기공을 통한 가스 교환을 저해함으로써 광합성 효율이 감소하는 것으로 나타났다. 따라서 미세먼지 농도가 높은 지역에서는 식물의 생장 속도가 둔화될 수 있다.';
+var scienceDraft = '미세먼지는 잎 표면에 쌓여 빛을 가리고 기공을 막아 기체 교환을 방해한다. 기공이 막히면 이산화탄소가 들어오지 못해 광합성 속도가 떨어진다. 실험에서 미세먼지에 노출된 식물은 잎 색이 옅어지고 생장 길이가 짧아졌다.';
+
+var TONES = {
+  natural: { label:'자연스럽게', out:'자연스럽게 바꾼 문장', btn:'자연스럽게 변환하기', hint:'말하듯 자연스러운 문장으로 바꿔요.' },
+  report:  { label:'보고서·과제용', out:'보고서·과제용으로 바꾼 문장', btn:'보고서·과제용으로 변환하기', hint:'보고서처럼 단정한 문어체로 바꿔요.' },
+  concise: { label:'간결하게', out:'간결하게 줄인 문장', btn:'간결하게 변환하기', hint:'군더더기를 덜어 짧게 줄여요.' }
+};
+
+/* 데모용 완성 문장 (톤별) */
+var KNOWN = {};
+KNOWN[sampleSource] = {
+  natural: { text:'미세먼지는 식물이 자라는 데 좋지 않은 영향을 줍니다. 특히 잎의 기공으로 기체를 주고받는 과정을 방해해서 광합성 효율이 떨어집니다. 그래서 미세먼지 농도가 높은 곳에서는 식물이 자라는 속도가 느려질 수 있습니다.',
+             changed:['좋지 않은 영향을 줍니다','기체를 주고받는 과정을 방해해서','자라는 속도가 느려질 수 있습니다'] },
+  report:  { text:'미세먼지는 식물의 생장에 부정적인 영향을 준다. 특히 기공을 통한 기체 교환을 방해하여 광합성 효율을 낮춘다. 따라서 미세먼지 농도가 높은 지역에서는 식물의 생장 속도가 느려질 수 있다.',
+             changed:['부정적인 영향을 준다','광합성 효율을 낮춘다','생장 속도가 느려질 수 있다'] },
+  concise: { text:'미세먼지는 식물의 생장을 방해한다. 기공을 막아 광합성 효율을 떨어뜨리고, 결국 생장 속도도 늦춘다.',
+             changed:['생장을 방해한다','광합성 효율을 떨어뜨리고'] }
+};
+KNOWN[scienceDraft] = {
+  natural: { text:'미세먼지는 잎에 쌓여 빛을 가리고, 기공을 막아 기체 교환을 방해해요. 기공이 막히면 이산화탄소가 들어오지 못해서 광합성 속도가 떨어져요. 실험에서도 미세먼지에 노출된 식물은 잎 색이 옅어지고 생장 길이가 짧아졌어요.',
+             changed:['기체 교환을 방해해요','광합성 속도가 떨어져요','짧아졌어요'] },
+  report:  { text:'미세먼지는 잎 표면에 축적되어 빛을 차단하고, 기공을 폐쇄하여 기체 교환을 저해한다. 기공이 폐쇄되면 이산화탄소 유입이 감소하여 광합성 속도가 저하된다. 실험 결과, 미세먼지에 노출된 식물은 잎 색이 옅어지고 생장 길이가 단축되었다.',
+             changed:['축적되어 빛을 차단하고','광합성 속도가 저하된다','생장 길이가 단축되었다'] },
+  concise: { text:'미세먼지는 잎을 가리고 기공을 막아 광합성을 줄인다. 노출된 식물은 잎 색이 옅어지고 생장도 느려졌다.',
+             changed:['광합성을 줄인다','생장도 느려졌다'] }
+};
+
+var TONE_RULES = {
+  natural: [
+    ['것으로 사료된다','것 같다'], ['것으로 판단된다','것 같아요'], ['사료된다','생각된다'],
+    ['따라서','그래서'], ['그러나','하지만'], ['또한 ','또 '], ['즉,','바꿔 말하면'],
+    ['부정적인','좋지 않은'], ['긍정적인','좋은'], ['영향을 미치는','영향을 주는'],
+    ['저해함으로써','방해해서'], ['감소하는','줄어드는'], ['둔화될 수 있다','느려질 수 있다'],
+    ['수행하였다','했다'], ['하였다','했다'], ['보여주었다','보여 줬다'],
+    ['존재한다','있다'], ['매우','아주']
+  ],
+  report: [
+    ['것으로 사료된다','것으로 판단된다'], ['것 같다','것으로 보인다'], ['것 같아요','것으로 보입니다'],
+    ['좋지 않은','부정적인'], ['그래서','따라서'], ['하지만','그러나'], ['아주','매우'],
+    ['해요','한다'], ['했어요','했다'], ['줄어드는','감소하는'], ['늘어나는','증가하는'],
+    ['보여 줬다','보였다'], ['많아요','많다'], ['없어요','없다'], ['돼요','된다']
+  ],
+  concise: [
+    ['것으로 사료된다','것 같다'], ['것으로 판단된다','것 같다'], ['매우 ',''], ['아주 ',''],
+    ['정말 ',''], ['너무 ',''], ['따라서','그래서'], ['그러나','하지만'], ['또한 ','또 '],
+    ['부정적인','나쁜'], ['저해함으로써','방해해서'], ['감소하는','줄어드는'],
+    ['하는 것으로 나타났다','했다'], ['라는 것을','']
+  ]
+};
+var TONE_RULES2 = {
+  natural: [
+    ['것 같다','것 같아요'], ['수 있다','수 있어요'], ['나타났다','나타났어요'],
+    ['했다','했어요'], ['된다','돼요'], ['있는','있어요']
+  ],
+  report: [
+    ['것으로 보인다','것으로 판단된다'], ['할 수 있다','할 수 있다'], ['했다','하였다'],
+    ['줄어드는','감소하는'], ['많다','많은 편이다']
+  ],
+  concise: [
+    ['그래서 ',''], ['하지만 ',''], ['그리고 ',''], ['정말 ',''], ['아주 ',''], ['것이다','']
+  ]
+};
+
+function setTone(t){
+  state.tone = t;
+  document.querySelectorAll('.tone').forEach(function(b){
+    b.classList.toggle('on', b.dataset.tone === t);
+  });
+  $('toneHint').textContent = TONES[t].hint;
+  $('humanBtnLabel').textContent = TONES[t].btn;
+  if($('humanResult').style.display !== 'none' && state.lastSrc){
+    var cv = $('humanSrc').value.trim() || state.lastSrc;
+    applyResult(cv, computeResult(cv, false));
+    toast('톤을 <b>' + TONES[t].label + '</b> 톤으로 다시 다듬었어요. 횟수는 쓰지 않았어요.');
+  }
+}
+
+function loadHumanSample(){
+  $('humanSrc').value = sampleSource;
+  $('humanFrom').classList.remove('show');
+  state.lastSrc = '';
+  $('humanResult').style.display = 'none';
+  updateLens();
+}
+function startHumanize(){
+  var card = $('humanCard');
+  card.scrollIntoView({behavior:'smooth', block:'center'});
+  setTimeout(function(){
+    $('humanSrc').focus();
+    if($('humanSrc').value.trim() && $('humanResult').style.display === 'none') convertHuman();
+  }, 220);
+}
+function keepOriginal(){
+  state.gaugeKept = true;
+  $('gaugeCard').classList.add('kept');
+  $('gKept').classList.add('show');
+  $('gActions').style.display = 'none';
+  $('gNote').textContent = '원문은 그대로 두었어요. 사용률은 그대로 표시돼요.';
+  state.suggestDismissed = true;
+  hideSuggest();
+}
+function undoKeep(){
+  state.gaugeKept = false;
+  $('gaugeCard').classList.remove('kept');
+  $('gKept').classList.remove('show');
+  $('gActions').style.display = 'flex';
+  renderUsage();
+}
+function convertHuman(retry){
+  if(state.converting) return;
+  if(state.humanLeft <= 0){ toast('이번 달 횟수를 모두 썼어요. Plus는 월 100회까지 가능해요.'); return; }
+  var src = $('humanSrc').value.trim();
+  if(!src){ toast('먼저 문장을 입력해 주세요.'); return; }
+
+  state.converting = true;
+  var btn = $('humanBtn');
+  btn.disabled = true;
+  $('humanBtnLabel').textContent = '변환 중…';
+
+  setTimeout(function(){
+    state.converting = false;
+    btn.disabled = false;
+    $('humanBtnLabel').textContent = TONES[state.tone].btn;
+
+    var r = computeResult(src, !!retry);
+    if(r.empty){
+      toast(retry
+        ? '이미 자연스러운 문장이에요. 위에서 톤을 바꾸면 다른 결과가 나와요.'
+        : '바꿀 표현을 찾지 못했어요. 횟수는 쓰지 않았어요.');
+      if(retry) return;
+    }else{
+      state.humanLeft = Math.max(0, state.humanLeft - 1);
+      updateQuota();
+    }
+    applyResult(src, r);
+    setTimeout(function(){
+      $('humanResult').scrollIntoView({behavior:'smooth', block:'center'});
+    }, 60);
+  }, 820);
+}
+
+/* 선택한 톤으로 결과 문장을 만든다 */
+function computeResult(src, retry){
+  var tone = state.tone;
+  var known = KNOWN[src];
+  if(known && known[tone] && !retry){
+    return { plain: known[tone].text, html: highlightPhrases(known[tone].text, known[tone].changed), empty:false };
+  }
+  var r = genericTone(src, tone, retry);
+  return { plain: r.text, html: r.changed.length ? highlightPhrases(r.text, r.changed) : escapeHtml(r.text), empty: r.empty };
+}
+
+function applyResult(src, r){
+  $('cmpBefore').textContent = src;
+  $('cmpAfter').innerHTML = r.html;
+  $('cmpTone').textContent = TONES[state.tone].out;
+  $('emptyNote').style.display = r.empty ? 'block' : 'none';
+  state.lastSrc = src;
+  $('humanFrom').classList.toggle('show', src === state.lastCorrected && !!state.lastCorrected);
+  $('humanLeft').textContent = '이번 달 ' + state.humanLeft + '/5회 남음';
+  $('humanResult').style.display = 'block';
+}
+
+function genericTone(src, tone, second){
+  var rules = TONE_RULES[tone] || TONE_RULES.natural;
+  var out = src;
+  var changed = [];
+  rules.forEach(function(r){
+    if(out.indexOf(r[0]) > -1){
+      out = out.split(r[0]).join(r[1]);
+      if(r[1]) changed.push(r[1]);
+    }
+  });
+  if(second){
+    (TONE_RULES2[tone] || []).forEach(function(r){
+      if(out.indexOf(r[0]) > -1){
+        out = out.split(r[0]).join(r[1]);
+        if(r[1]) changed.push(r[1]);
+      }
+    });
+  }
+  if(tone === 'concise') out = out.replace(/\s{2,}/g, ' ').trim();
+  out = out.replace(/\s{2,}/g, ' ').trim();
+  if(!changed.length) return { text: out, changed: [], empty: true };
+  return { text: out, changed: changed.slice(0, 4) };
+}
+function highlightPhrases(text, phrases){
+  var out = escapeHtml(text);
+  phrases.forEach(function(p){
+    if(!p) return;
+    var safe = escapeHtml(p);
+    if(out.indexOf(safe) > -1 && out.indexOf('<span class="hl">' + safe) === -1){
+      out = out.replace(safe, '<span class="hl">' + safe + '</span>');
+    }
+  });
+  return out;
+}
+function copyHuman(){
+  var t = $('cmpAfter').textContent;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(function(){
+      toast('변환한 문장을 복사했어요.');
+    }).catch(function(){ toast('복사한 문장: ' + t.slice(0, 24) + '…'); });
+  }else{
+    toast('복사한 문장: ' + t.slice(0, 24) + '…');
+  }
+}
+
+/* ---------------- counters / quota ---------------- */
+function countText(v){
+  return { all: v.length, noSpace: v.replace(/\s/g, '').length };
+}
+function renderCounter(el, v){
+  if(!el) return;
+  var c = countText(v);
+  el.innerHTML = '공백 포함 <b>' + c.all + '</b>자 · 제외 <b>' + c.noSpace + '</b>자';
+}
+function updateLens(){
+  var h = $('humanSrc').value;
+  var g = $('grammarSrc').value;
+  renderCounter($('humanCountTop'), h);
+  renderCounter($('humanCountFoot'), h);
+  renderCounter($('grammarCountTop'), g);
+  renderCounter($('grammarCountFoot'), g);
+  autoGrow($('humanSrc'));
+  autoGrow($('grammarSrc'));
+}
+function autoGrow(el){
+  if(!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.max(92, el.scrollHeight + 2) + 'px';
+}
+function updateQuota(){
+  $('humanQuota').textContent = state.humanLeft + '/5회 남음';
+  $('grammarQuota').textContent = state.grammarLeft > 0 ? ('오늘 ' + state.grammarLeft + '회 남음') : '오늘 횟수 소진';
+  $('grammarQuota').classList.toggle('warn', state.grammarLeft <= 2);
+}
+
+/* ---------------- grammar ---------------- */
+var gSample = '내가 어제 학교에서 친구랑 떡복이를 먹었는데 진짜 맛잇엇다. 그런데 숙제 안해가지고 혼낫음 ㅜㅜ';
+
+var gFixes = [
+  { wrong:'떡복이', right:'떡볶이', why:'표준어 표기입니다. 떡을 볶아 만든 음식이라 「떡볶이」로 씁니다.' },
+  { wrong:'맛잇엇다', right:'맛있었다', why:'「있다」의 과거형은 「있었다」예요. 받침이 있는 말 뒤에는 「-었다」를 붙입니다.' },
+  { wrong:'안해가지고', right:'안 해서', why:'부사 「안」과 동사 「해」는 띄어 씁니다. 구어체 「-가지고」는 글에서는 「-해서」가 자연스러워요.' },
+  { wrong:'혼낫음 ㅜㅜ', right:'혼났다', why:'「혼나다」의 과거형은 「혼났다」예요. 보고서·과제에서는 이모티콘 대신 문장으로 씁니다.' }
+];
+
+function loadGrammarSample(){
+  $('grammarSrc').value = gSample;
+  $('grammarOut').style.display = 'none';
+  updateLens();
+}
+
+function checkGrammar(){
+  if(state.checking) return;
+  var src = $('grammarSrc').value.trim();
+  if(!src){ toast('먼저 문장을 입력해 주세요.'); return; }
+  if(state.grammarLeft <= 0){ toast('오늘 Free 횟수를 다 썼어요. Plus는 무제한이에요.'); return; }
+
+  state.checking = true;
+  var btn = $('grammarBtn');
+  btn.disabled = true;
+  $('grammarBtnLabel').textContent = '문장을 살펴보는 중…';
+
+  setTimeout(function(){
+    state.grammarLeft = Math.max(0, state.grammarLeft - 1);
+    state.checking = false;
+    btn.disabled = false;
+    $('grammarBtnLabel').textContent = '문법 검사하기';
+
+    var isSample = (src === gSample);
+    var dict = isSample ? gFixes : buildGeneric(src);
+    var hits = findHits(src, dict);
+
+    $('diffBefore').innerHTML = renderDiff(src, hits, 'err', false);
+    $('diffAfter').innerHTML = renderDiff(src, hits, 'fix', true);
+    $('fixCount').textContent = hits.length;
+    $('afterLabel').style.display = hits.length ? '' : 'none';
+    $('diffAfter').style.display = hits.length ? '' : 'none';
+    document.querySelector('#grammarOut .result-head b').textContent =
+      hits.length ? '고칠 곳을 찾았어요' : '고칠 곳을 찾지 못했어요';
+    var okIcon = document.querySelector('#grammarOut .result-head .ok');
+    okIcon.textContent = hits.length ? '!' : '✓';
+    okIcon.style.background = hits.length ? '#fdecec' : '#e8f8f1';
+    okIcon.style.color = hits.length ? '#e5484d' : '#0e9f6e';
+    $('fixCount').parentNode.style.display = hits.length ? '' : 'none';
+
+    var ol = $('reasonList');
+    ol.innerHTML = '';
+    if(!hits.length){
+      var clean = document.createElement('li');
+      clean.innerHTML = '<span class="num">✓</span><div>맞춤법·띄어쓰기에서 눈에 띄는 문제를 찾지 못했어요. 다만 문장이 길면 읽기 어려우니 한 번 끊어 보세요.</div>';
+      ol.appendChild(clean);
+    }
+    hits.forEach(function(h, i){
+      var li = document.createElement('li');
+      li.id = 'reason-' + i;
+      li.innerHTML = '<span class="num">' + (i+1) + '</span><div><span class="pair"><s>' +
+        escapeHtml(h.wrong) + '</s> → <em>' + escapeHtml(h.right) + '</em></span>' + escapeHtml(h.why) + '</div>';
+      ol.appendChild(li);
+    });
+
+    state.lastCorrectedSrc = src;
+    state.lastCorrected = hits.length ? applyFixes(src, hits) : '';
+    $('toHumanBtn').style.display = hits.length ? 'flex' : 'none';
+
+    $('grammarOut').style.display = 'block';
+    updateQuota();
+    setTimeout(function(){ $('grammarOut').scrollIntoView({behavior:'smooth', block:'start'}); }, 60);
+  }, 760);
+}
+
+/* 겹치지 않는 오류 구간을 찾아 준다 */
+function findHits(src, dict){
+  var cands = [];
+  dict.forEach(function(d){
+    var i = src.indexOf(d.wrong);
+    while(i > -1){
+      cands.push({ start:i, end:i + d.wrong.length, wrong:d.wrong, right:d.right, why:d.why });
+      i = src.indexOf(d.wrong, i + 1);
+    }
+  });
+  cands.sort(function(a, b){
+    return a.start - b.start || (b.end - b.start) - (a.end - a.start);
+  });
+  var out = [], last = -1;
+  cands.forEach(function(c){
+    if(c.start >= last){ out.push(c); last = c.end; }
+  });
+  return out.slice(0, 6);
+}
+
+function renderDiff(src, hits, cls, corrected){
+  var html = '', pos = 0;
+  hits.forEach(function(h, i){
+    html += escapeHtml(src.slice(pos, h.start));
+    var word = corrected ? h.right : h.wrong;
+    html += '<span class="' + cls + '" data-i="' + i + '" onclick="pulse(' + i + ')">' + escapeHtml(word) + '</span>';
+    pos = h.end;
+  });
+  return html + escapeHtml(src.slice(pos));
+}
+
+function applyFixes(src, hits){
+  var out = '', pos = 0;
+  hits.forEach(function(h){
+    out += src.slice(pos, h.start) + h.right;
+    pos = h.end;
+  });
+  return out + src.slice(pos);
+}
+
+function toHumanizeFromGrammar(){
+  var fixed = state.lastCorrected;
+  if(!fixed){ toast('교정된 문장이 없어요.'); return; }
+  $('humanSrc').value = fixed;
+  state.lastSrc = '';
+  $('humanResult').style.display = 'none';
+  $('humanFrom').classList.add('show');
+  switchTab('human');
+  updateLens();
+  setTimeout(function(){
+    $('humanCard').scrollIntoView({behavior:'smooth', block:'center'});
+    $('humanSrc').focus();
+  }, 180);
+  toast('교정된 문장을 휴머나이징 탭에 담았어요.');
+}
+
+/* 샘플이 아닌 문장용: 흔한 오류만 가볍게 잡아 주는 데모 */
+function buildGeneric(src){
+  return [
+    { wrong:'되요', right:'돼요', why:'「되어요」가 줄어든 말이라 「돼요」가 맞아요.' },
+    { wrong:'안되', right:'안 돼', why:'「되」와 「돼」를 구분해 주세요. 여기서는 「안 돼」로 씁니다.' },
+    { wrong:'됬', right:'됐', why:'「되＋었」은 「됐」으로 줄여 씁니다. (됐다, 됐어요)' },
+    { wrong:'안해서', right:'안 해서', why:'부사 「안」과 동사 「해」는 띄어 씁니다.' },
+    { wrong:'몇일', right:'며칠', why:'「몇일」은 틀린 표기이고 「며칠」이 맞아요.' },
+    { wrong:'웬지', right:'왠지', why:'「왜인지」가 줄어든 말이라 「왠지」로 씁니다.' },
+    { wrong:'역활', right:'역할', why:'「역할」이 표준어입니다.' },
+    { wrong:'어떻해', right:'어떡해', why:'「어떻게 해」가 줄어든 말이라 「어떡해」로 씁니다.' },
+    { wrong:'할께', right:'할게', why:'받침 없는 말 뒤에서는 「-ㄹ게」로 적습니다.' }
+  ];
+}
+
+function pulse(i){
+  document.querySelectorAll('.err, .fix').forEach(function(el){
+    el.classList.toggle('pulse', el.dataset.i == i);
+  });
+  document.querySelectorAll('.reasons li').forEach(function(el, idx){
+    el.classList.toggle('pulse', idx == i);
+  });
+  var r = $('reason-' + i);
+  if(r) r.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+/* ---------------- toast ---------------- */
+var toastTimer;
+function toast(html){
+  var t = $('toast');
+  var onChat = $('v-chat').classList.contains('active');
+  t.style.bottom = onChat ? 'calc(112px + env(safe-area-inset-bottom))' : 'calc(20px + env(safe-area-inset-bottom))';
+  t.innerHTML = html;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+
+/* ---------------- plans ---------------- */
+function openPlans(){
+  $('sheetBg').classList.add('show');
+  $('sheet').classList.add('show');
+}
+function closePlans(){
+  $('sheetBg').classList.remove('show');
+  $('sheet').classList.remove('show');
+}
+
+/* ---------------- init ---------------- */
+$('humanSrc').addEventListener('input', function(){
+  updateLens();
+  $('humanFrom').classList.toggle('show', $('humanSrc').value.trim() === state.lastCorrected && !!state.lastCorrected);
+});
+$('grammarSrc').addEventListener('input', function(){
+  updateLens();
+  $('grammarOut').style.display = 'none';
+});
+seedUsage();
+renderUsage();
+updateQuota();
+updateLens();
+</script>
+</body>
+</html>
